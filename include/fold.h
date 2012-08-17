@@ -9,17 +9,20 @@
 namespace FSL
 {
 
-  template <class A, class B,
-            template <class T, class All = std::allocator<T> > class V>
-  A
-  foldl(const std::function<A(A, B)>& fun, const A& a, const V<B>& list)
+  template <class In, class Out, class It>
+  constexpr Out
+  foldl(const std::function<Out(Out, In)>& fun, const In& a, It begin, It end)
   {
-    A result = a;
-    for (const auto& e : list)
-      result = fun(result, e);
-    return result;
+    return (begin == end ? a : foldl(fun, fun(a, *begin), ++begin, end));
   }
 
+  template <class A, class B,
+            template <class T, class All = std::allocator<T> > class V>
+  constexpr A
+  foldl(const std::function<A(A, B)>& fun, const A& a, const V<B>& list)
+  {
+    return foldl(fun, a, begin(list), end(list));
+  }
 
   template <template <class T, class All = std::allocator<T> > class V, class B>
   constexpr bool
