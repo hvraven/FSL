@@ -1,5 +1,7 @@
-#ifndef FSL_LIST_H
-#define FSL_LIST_H
+#ifndef FSL_FOLD_H
+#define FSL_FOLD_H
+
+#include "list.h"
 
 #include <functional>
 #include <memory>
@@ -7,24 +9,40 @@
 namespace FSL
 {
 
-  template <class F, class A, class B,
-           template <class T, class All = std::allocator<T> > class V>
+  template <class A, class B,
+            template <class T, class All = std::allocator<T> > class V>
   A
-  foldl(F fun, const A& a, const V<B>& list)
+  foldl(const std::function<A(A, B)>& fun, const A& a, const V<B>& list)
   {
     A result = a;
-    for (auto it = begin(list); it != end(list); ++it)
-      result = fun(result, *it);
+    for (const auto& e : list)
+      result = fun(result, e);
     return result;
   }
 
+
   template <template <class T, class All = std::allocator<T> > class V, class B>
-  bool
-  fand(V<B> list)
+  constexpr bool
+  andf(V<B> list, B start = true)
   {
-    return foldl(std::logical_and<B>(), true, list);
+    return foldl(std::function<bool(bool, bool)>(std::logical_and<B>()), true, list);
   }
-  
+
+  template <template <class T, class All = std::allocator<T> > class V, class B>
+  constexpr bool
+  orf(V<B> list, B start = false)
+  {
+    return foldl(std::function<bool(bool, bool)>(std::logical_or<B>()), start, list);
+  }
+
+  template <class A,
+            template <class T, class All = std::allocator<T> > class V>
+  constexpr bool
+  any(std::function<bool(A)> fun, V<A> list)
+  {
+    return orf(map(fun, list));
+  }
+
 }
 
-#endif /* FSL_LIST_H */
+#endif /* FSL_FOLD_H */
